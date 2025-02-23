@@ -17,6 +17,7 @@ on:
       - 'LICENSE'
       - 'data/static/i18n/*.json'
       - 'frontend/src/assets/i18n/*.json'
+  workflow_dispatch:
 env:
   NODE_DEFAULT_VERSION: 20
   ANGULAR_CLI_VERSION: 17
