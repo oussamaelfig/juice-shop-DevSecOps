@@ -54,6 +54,35 @@ jobs:
           npm run lint:config -- -f ./config/quiet.yml &&
           npm run lint:config -- -f ./config/tutorial.yml &&
           npm run lint:config -- -f ./config/unsafe.yml
+  sca_dependency_check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v3
+      - name: Install Dependency-Check
+        run: |
+          mkdir dependency-check
+          cd dependency-check
+          wget https://github.com/jeremylong/DependencyCheck/releases/download/v8.2.1/dependency-check-8.2.1-release.zip
+          unzip dependency-check-8.2.1-release.zip -d .
+          chmod +x ./dependency-check/bin/dependency-check.sh
+          cd ..
+      - name: Run Dependency-Check
+        run: |
+          dependency-check/dependency-check/bin/dependency-check.sh \
+            --scan . \
+            --format HTML \
+            --out ./dependency-check-report.html \
+            --disableAssembly true \
+            --disableNodeAudit false \
+            --disableNodeModules true \
+            --cveUrlBase https://nvd.nist.gov/feeds/xml/cve/2.0/ \
+            --cveUrlModified https://nvd.nist.gov/feeds/xml/cve/2.0/modified.xml.gz
+      - name: Upload SCA Report
+        uses: actions/upload-artifact@v3
+        with:
+          name: Dependency-Check-Report
+          path: ./dependency-check-report.html
   coding-challenge-rsn:
     runs-on: windows-latest
     steps:
@@ -371,3 +400,35 @@ jobs:
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           slack_webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
+  container_scanning:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v3
+      - name: Log in to GitHub Docker registry (optional)
+        if: false
+        run: echo "Only needed if pulling a private base image."
+      - name: Build Docker image
+        run: |
+          docker build -t juice-shop:latest .
+      - name: Trivy Scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'juice-shop:latest'
+          format: 'table'
+          ignore-unfixed: false
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH,MEDIUM,LOW'
+          exit-code: '0'
+          ignore-policy-update-failure: true
+      - name: Export Trivy results
+        if: always()
+        run: cat ./trivy-report.txt
+        shell: bash
+      - name: Upload Trivy Report
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: Trivy-Report
+          path: trivy-report.txt
+
