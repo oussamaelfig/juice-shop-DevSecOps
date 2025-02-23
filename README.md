@@ -244,3 +244,6 @@ OWASP Juice Shop and any contributions are Copyright © by Bjoern Kimminich & th
 2014-2024.
 
 ![Juice Shop Logo](https://raw.githubusercontent.com/bkimminich/juice-shop/master/frontend/src/assets/public/images/JuiceShop_Logo_400px.png)
+
+
+#### Display all files under a directory : `find . -type f -exec sh -c 'echo "---\nhere is the file {} :" && cat {}' \;`
